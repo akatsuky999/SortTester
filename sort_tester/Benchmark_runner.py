@@ -8,6 +8,7 @@ from sort_tester.core import SortTester
 from sort_tester.algorithms import builtin_algorithms
 from sort_tester.plotting import plot_times_df
 
+
 class BenchmarkRunner:
     def __init__(
         self,
@@ -28,7 +29,6 @@ class BenchmarkRunner:
     ):
         self.csv_path = csv_path
         self.col_name = col_name
-        self.algos = self._choose_algorithms(algos)
         self.ratios = self._parse_ratios(ratios, ratmin, ratmax, nrat)
         self.repeat = repeat
         self.sequential = sequential
@@ -38,6 +38,7 @@ class BenchmarkRunner:
         self.random_seed = random_seed
         self.expected_cols = expected_cols
         self.data = self._load_and_prepare(csv_path)
+        self.algos_arg = algos
 
     def _load_and_prepare(self, path: str) -> pd.DataFrame:
         if not os.path.isabs(path):
@@ -70,15 +71,22 @@ class BenchmarkRunner:
         return sorted(set(ratios_list))
 
     @staticmethod
-    def _choose_algorithms(arg_algos: Optional[str]) -> dict:
+    def _choose_algorithms(arg_algos: Optional[str], col_series: pd.Series) -> dict:
         if arg_algos is None:
-            return {name: func for name, func in builtin_algorithms.items()}
-        names = [s.strip() for s in arg_algos.split(",") if s.strip()]
-        chosen = {}
-        for n in names:
-            if n not in builtin_algorithms:
-                raise ValueError(f"Algorithm '{n}' not found. Available: {', '.join(sorted(builtin_algorithms.keys()))}")
-            chosen[n] = builtin_algorithms[n]
+            chosen = {name: func for name, func in builtin_algorithms.items()}
+        else:
+            names = [s.strip() for s in arg_algos.split(",") if s.strip()]
+            chosen = {}
+            for n in names:
+                if n not in builtin_algorithms:
+                    raise ValueError(f"Algorithm '{n}' not found. Available: {', '.join(sorted(builtin_algorithms.keys()))}")
+                chosen[n] = builtin_algorithms[n]
+
+        # 如果列是浮点数，则剔除 radix_sort
+        if not pd.api.types.is_integer_dtype(col_series) and 'radix_sort' in chosen:
+            print("Note: Column is not integer, skipping radix_sort")
+            chosen.pop('radix_sort')
+
         return chosen
 
     @staticmethod
@@ -98,6 +106,8 @@ class BenchmarkRunner:
             series = pd.to_numeric(series, errors="coerce").dropna()
         cleaned = self.data.loc[series.index].copy()
         cleaned[self.col_name] = series.values
+
+        self.algos = self._choose_algorithms(self.algos_arg, series)
 
         print(f"Running benchmark on column '{self.col_name}' with {len(cleaned)} rows, {cleaned[self.col_name].nunique()} unique values")
         print(f"Algorithms: {list(self.algos.keys())}")
