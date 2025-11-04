@@ -1,7 +1,8 @@
-from typing import Callable, Dict, List, Tuple, Optional
+from typing import Callable, Dict, List, Tuple
 import numpy as np
 import pandas as pd
-from .utils import timeit, is_sorted, ensure_list
+import inspect
+from .utils import timeit, is_sorted
 from .algorithms import builtin_algorithms
 
 class SortTester:
@@ -13,48 +14,52 @@ class SortTester:
         self.random_seed = int(random_seed)
         self.copy_input = bool(copy_input)
 
-    def get_data(self, ratio: float, sequential: bool = False, as_list: bool = True) -> Tuple[List, List]:
+    def get_data(self, ratio: float, sequential: bool = False) -> List:
         if not (0 < ratio <= 1):
             raise ValueError("ratio must be in (0, 1]")
         n = len(self.data)
         if n == 0:
-            return [], []
+            return []
         if sequential:
             seg_len = max(1, int(n * ratio))
             sampled = self.data.iloc[:seg_len]
         else:
             sampled = self.data.sample(frac=ratio, random_state=self.random_seed)
         vals = sampled[self.col_name].tolist()
-        uniq = sampled[self.col_name].unique().tolist()
         if self.copy_input:
             vals = list(vals)
-        return vals, uniq
+        return vals
 
-    def run_single(self, alg: Callable, arr: List, unique_list: Optional[List] = None, check_sorted: bool = True) -> Dict:
-        run_args = {}
-        if unique_list is not None:
-            run_args['unique_list'] = unique_list
-        elapsed, out = timeit(alg, list(arr), **run_args)
+    def run_single(self, alg: Callable, arr: List, check_sorted: bool = True) -> Dict:
+        arr_copy = list(arr)
+        sig = inspect.signature(alg)
+        if 'arr' in sig.parameters:
+            elapsed, out = timeit(alg, arr=arr_copy)
+        else:
+            elapsed, out = timeit(alg, arr_copy)
         correct = True
-        if check_sorted:
+        if check_sorted and len(out) > 1:
             correct = is_sorted(out)
         return {'time': elapsed, 'correct': bool(correct), 'output': out}
 
-    def run_algorithms(self, alg_dict: Dict[str, Callable], ratios_dict: Dict[str, List[float]], repeat: int = 3, sequential: bool = False, check_sorted: bool = True) -> pd.DataFrame:
+    def run_algorithms(
+        self,
+        alg_dict: Dict[str, Callable],
+        ratios_dict: Dict[str, List[float]],
+        repeat: int = 3,
+        sequential: bool = False,
+        check_sorted: bool = True
+    ) -> pd.DataFrame:
         all_ratios = sorted(set(r for r_list in ratios_dict.values() for r in r_list))
         results = {name: [] for name in alg_dict.keys()}
         for r in all_ratios:
-            arr, uniq = self.get_data(r, sequential=sequential)
+            arr = self.get_data(r, sequential=sequential)
             for name, alg in alg_dict.items():
                 times = []
-                correctness = []
                 for _ in range(repeat):
-                    res = self.run_single(alg, arr, uniq if name == 'counting_sort' else None, check_sorted=check_sorted)
-                    times.append(res['time'])
-                    correctness.append(res['correct'])
-                mean_time = float(np.mean(times))
-                if not all(correctness):
-                    mean_time = float('nan')
+                    res = self.run_single(alg, arr, check_sorted=check_sorted)
+                    times.append(res['time'] if res['correct'] else np.nan)
+                mean_time = float(np.nanmean(times)) if len(times) > 0 else float('nan')
                 results[name].append(mean_time)
         df = pd.DataFrame(results, index=all_ratios)
         df.index.name = 'ratio'
