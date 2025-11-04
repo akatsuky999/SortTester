@@ -8,12 +8,21 @@ A toolkit to benchmark and evaluate sorting algorithms on real-world tabular dat
 
 ```
 SortTester/
-├── data/              # Store sample or test datasets
-├── sort_tester/       # Core code module
+├── data/
+│   └── TDCS_M06A_20231204_080000.csv
+├── main/
+│   ├── results/
+│   │   ├── plot.png
+│   │   ├── report.json
+│   │   └── timing.csv
+│   ├── benchmark_example.py
+│   └── runner.py
+├── sort_tester/
 │   ├── __init__.py
-│   └── … (sorting algorithm interfaces / driver / evaluator)
-├── examples/          # Example scripts
-│   └── benchmark_example.py   # Demonstrates how to run benchmarks with the tool
-├── README.md          # Project introduction, installation & usage guide
-└── … (other configuration files: e.g., requirements.txt, setup.py)
+│   ├── algorithms.py
+│   ├── Benchmark_runner.py
+│   ├── core.py
+│   ├── plotting.py
+│   └── utils.py
+└── README.md
 ```
