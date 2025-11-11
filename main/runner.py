@@ -22,16 +22,20 @@ if __name__ == "__main__":
     ]
 
     col_name = "TripLength"
-    result_dir = os.path.join(project_root, "result", col_name)
+    ratmin = 0.01
+    ratmax = 0.1
+    nrat = 5
+
+    result_dir = os.path.join(project_root, "result", f"{col_name}_r{ratmin}-{ratmax}_n{nrat}")
 
     runner = BenchmarkRunner(
         csv_path="data/TDCS_M06A_20231204_080000.csv",
         col_name=col_name,
         algos=None,
         ratios=None,
-        ratmin=0.01,
-        ratmax=0.1,
-        nrat=5,
+        ratmin=ratmin,
+        ratmax=ratmax,
+        nrat=nrat,
         repeat=10,
         sequential=False,
         prefix_random=True,

@@ -32,6 +32,10 @@ class BenchmarkRunner:
     ):
         self.csv_path = csv_path
         self.col_name = col_name
+        # preserve inputs for title/folder info
+        self._ratmin_input = ratmin
+        self._ratmax_input = ratmax
+        self._nrat_input = nrat
         self.ratios = self._parse_ratios(ratios, ratmin, ratmax, nrat)
         self.repeat = repeat
         self.sequential = sequential
@@ -153,8 +157,13 @@ class BenchmarkRunner:
                 json.dump({"timings": times_df.to_dict(), "complexities": complexities}, fh, indent=2)
             print(f"Saved JSON report to: {self.save_json}")
 
+        # build title suffix with ratio info when available
+        title_suffix = None
+        if isinstance(self._nrat_input, (int, float)) and isinstance(self._ratmin_input, (int, float)) and isinstance(self._ratmax_input, (int, float)):
+            title_suffix = f"ratmin={self._ratmin_input}, ratmax={self._ratmax_input}, nrat={self._nrat_input}"
+
         comp_info = plot_times_df(
-            tester.data, times_df, loglog=True, annotate=True, figsize=(8, 6), save_path=self.save_plot, col_name=self.col_name
+            tester.data, times_df, loglog=True, annotate=True, figsize=(8, 6), save_path=self.save_plot, col_name=self.col_name, title_suffix=title_suffix
         )
 
         if self.save_plot:

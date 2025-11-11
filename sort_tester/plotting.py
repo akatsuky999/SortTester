@@ -1,9 +1,19 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from typing import Dict
+from typing import Dict, Optional
 
-def plot_times_df(df_data: pd.DataFrame, times_df: pd.DataFrame, *, loglog: bool = True, annotate: bool = True, figsize=(8,6), save_path: str = None, col_name: str = None) -> Dict[str, Dict[str, float]]:
+def plot_times_df(
+    df_data: pd.DataFrame,
+    times_df: pd.DataFrame,
+    *,
+    loglog: bool = True,
+    annotate: bool = True,
+    figsize=(8,6),
+    save_path: str = None,
+    col_name: str = None,
+    title_suffix: Optional[str] = None
+) -> Dict[str, Dict[str, float]]:
     if times_df.empty:
         raise ValueError("times_df is empty")
 
@@ -69,7 +79,11 @@ def plot_times_df(df_data: pd.DataFrame, times_df: pd.DataFrame, *, loglog: bool
 
     plt.xlabel("Input size (n)")
     plt.ylabel("Time (s)")
-    title_text = f"Algorithm timings for {col_name}" if col_name else "Algorithm timings (fit vs theory)"
+    base_title = f"Algorithm timings for {col_name}" if col_name else "Algorithm timings (fit vs theory)"
+    if title_suffix:
+        title_text = f"{base_title} | {title_suffix}"
+    else:
+        title_text = base_title
     plt.title(title_text)
     plt.grid(False)
     plt.legend(loc='best', frameon=True, framealpha=0.9, edgecolor='black')
