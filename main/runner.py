@@ -21,7 +21,7 @@ if __name__ == "__main__":
         "TripInformation",
     ]
 
-    col_name = "TripLength"
+    col_name = "VehicleType"
     ratmin = 0.01
     ratmax = 0.1
     nrat = 5

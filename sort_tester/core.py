@@ -19,17 +19,17 @@ def _mean_time_for_alg(alg_path: str, repeat: int, check_sorted: bool, arr: List
     times: List[float] = []
     sig = inspect.signature(alg)
     total_runs = max(1, int(repeat))
+    ref_sorted_first: List = []
     for i in range(total_runs):
         arr_copy = list(arr)
         if 'arr' in sig.parameters:
             elapsed, out = timeit(alg, arr=arr_copy)
         else:
             elapsed, out = timeit(alg, arr_copy)
-        if i == 0 and check_sorted and len(out) > 1:
-            if not is_sorted(out):
-                times.append(float("nan"))
-                # still record timing but mark as nan mean overall
-                break
+        if i == 0 and check_sorted:
+            ref_sorted_first = sorted(arr_copy)
+            if out != ref_sorted_first:
+                return float("nan")
         times.append(elapsed)
     return float(np.nanmean(times)) if len(times) > 0 else float("nan")
 
@@ -73,8 +73,8 @@ class SortTester:
         else:
             elapsed, out = timeit(alg, arr_copy)
         correct = True
-        if check_sorted and len(out) > 1:
-            correct = is_sorted(out)
+        if check_sorted:
+            correct = (out == sorted(arr_copy))
         return {'time': elapsed, 'correct': bool(correct), 'output': out}
 
     def run_algorithms(

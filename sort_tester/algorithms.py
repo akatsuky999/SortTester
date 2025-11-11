@@ -1,5 +1,6 @@
 from typing import Callable, Dict, List
 from .utils import ensure_list
+import random
 
 Algorithm = Callable[[List], List]
 builtin_algorithms: Dict[str, Algorithm] = {}
@@ -43,15 +44,75 @@ def merge_sort(arr: List, **kw):
     out.extend(left[i:]); out.extend(right[j:])
     return out
 
-@register('quick_sort')
-def quick_sort(arr: List, **kw):
-    if len(arr) <= 1:
-        return list(arr)
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    mid = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quick_sort(left) + mid + quick_sort(right)
+@register('quick_sort_2')
+def quick_sort_2(arr: List, **kw):
+    nums = list(arr)
+    n = len(nums)
+    if n <= 1:
+        return nums
+    stack = [(0, n - 1)]
+    while stack:
+        left, right = stack.pop()
+        if left >= right:
+            continue
+        pivot_index = random.randint(left, right)
+        nums[pivot_index], nums[right] = nums[right], nums[pivot_index]
+        pivot = nums[right]
+        i = left - 1
+        for j in range(left, right):
+            if nums[j] < pivot:
+                i += 1
+                nums[i], nums[j] = nums[j], nums[i]
+        mid = i + 1
+        nums[mid], nums[right] = nums[right], nums[mid]
+        if mid - 1 > left:
+            stack.append((left, mid - 1))
+        if mid + 1 < right:
+            stack.append((mid + 1, right))
+    return nums
+
+
+@register('quick_sort_3')
+def quick_sort_3(arr: List, **kw):
+    nums = list(arr)
+    n = len(nums)
+    if n <= 1:
+        return nums
+    stack = [(0, n - 1)]
+    while stack:
+        left, right = stack.pop()
+        if left >= right:
+            continue
+        pivot_index = random.randint(left, right)
+        nums[left], nums[pivot_index] = nums[pivot_index], nums[left]
+        pivot = nums[left]
+        lt, i, gt = left, left + 1, right
+        while i <= gt:
+            if nums[i] < pivot:
+                nums[lt], nums[i] = nums[i], nums[lt]
+                lt += 1
+                i += 1
+            elif nums[i] > pivot:
+                nums[i], nums[gt] = nums[gt], nums[i]
+                gt -= 1
+            else:
+                i += 1
+        if left < lt - 1:
+            stack.append((left, lt - 1))
+        if gt + 1 < right:
+            stack.append((gt + 1, right))
+    return nums
+
+
+#@register('quick_sort_3')
+# def quick_sort_3(arr: List, **kw):
+#     if len(arr) <= 1:
+#         return list(arr)
+#     pivot = arr[len(arr) // 2]
+#     left = [x for x in arr if x < pivot]
+#     mid = [x for x in arr if x == pivot]
+#     right = [x for x in arr if x > pivot]
+#     return quick_sort_3(left) + mid + quick_sort_3(right)
 
 @register('comb_sort')
 def comb_sort(arr: List, **kw):
