@@ -118,18 +118,18 @@ When `n_jobs > 1`, (algorithm × ratio) tasks are executed in a process pool. Pr
 ## Complexity Estimation
 We fit a straight line to \((\log n, \log t)\) pairs to estimate the exponent \( a \) in \( t \propto n^a \):
 
-\[
+$$
 x = \log n,\quad y = \log t,\quad \hat{y} = a x + b
-\]
+$$
 
-The slope \( a \) and coefficient of determination \( R^2 \) are computed via ordinary least squares:
+The slope $a$ and coefficient of determination $R^2$ are computed via ordinary least squares:
 
-\[
+$$
 (a, b) = \arg\min_{a,b} \sum_i \bigl(y_i - (a x_i + b)\bigr)^2,\quad
 R^2 = 1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2}
-\]
+$$
 
-Interpretation: \( a \approx 1 \) suggests near \( O(n) \), \( a \approx 2 \) suggests near \( O(n^2) \), and so on. The plot overlays reference bands for \( O(n) \) and \( O(n^2) \) to aid visual comparison.
+Interpretation: $a \approx 1$ suggests near $O(n)$, $a \approx 2$ suggests near $O(n^2)$, and so on. The plot overlays reference bands for $O(n)$ and $O(n^2)$ to aid visual comparison.
 
 
 ## Algorithms (`sort_tester/algorithms.py`)
@@ -164,8 +164,3 @@ You can register custom algorithms via `add_algorithm(name, fn)` and select them
 - `radix_sort` skipped: only included for integer columns.
 - Time parsing failed: set `col_type="time"` and ensure the format is parsable by `pandas.to_datetime`.
 - Code parsing failed: verify your alphanumeric pattern; adjust `code_suffix_order` or extend the regex if needed.
-
-
-## License
-No license included. Add appropriate licensing information if you plan to open-source or distribute this project.
-
