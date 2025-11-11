@@ -116,7 +116,7 @@ When `n_jobs > 1`, (algorithm × ratio) tasks are executed in a process pool. Pr
 
 
 ## Complexity Estimation
-We fit a straight line to \((\log n, \log t)\) pairs to estimate the exponent \( a \) in \( t \propto n^a \):
+We fit a straight line to $(\log n, \log t)$ pairs to estimate the exponent $a$ in $t \propto n^a$:
 
 $$
 x = \log n,\quad y = \log t,\quad \hat{y} = a x + b
