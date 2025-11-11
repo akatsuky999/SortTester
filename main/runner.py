@@ -1,3 +1,11 @@
+import os
+import sys
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(script_dir, ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from sort_tester.Benchmark_runner import BenchmarkRunner
 
 if __name__ == "__main__":
@@ -13,9 +21,12 @@ if __name__ == "__main__":
         "TripInformation",
     ]
 
+    col_name = "TripLength"
+    result_dir = os.path.join(project_root, "result", col_name)
+
     runner = BenchmarkRunner(
         csv_path="data/TDCS_M06A_20231204_080000.csv",
-        col_name="TripLength",
+        col_name=col_name,
         algos=None,
         ratios=None,
         ratmin=0.01,
@@ -23,10 +34,13 @@ if __name__ == "__main__":
         nrat=5,
         repeat=10,
         sequential=False,
-        save_csv="results/timing.csv",
-        save_json="results/report.json",
-        save_plot="results/plot.png",
-        expected_cols=DEFAULT_COLUMNS
+        prefix_random=True,
+        save_csv=os.path.join(result_dir, "timing.csv"),
+        save_json=os.path.join(result_dir, "report.json"),
+        save_plot=os.path.join(result_dir, "plot.png"),
+        expected_cols=DEFAULT_COLUMNS,
+        n_jobs=max(1, (os.cpu_count() or 2) - 1),
+        copy_input=False
     )
 
     results = runner.run()

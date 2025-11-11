@@ -21,17 +21,21 @@ class BenchmarkRunner:
         nrat: int = 6,
         repeat: int = 3,
         sequential: bool = False,
+        prefix_random: bool = True,
         save_csv: Optional[str] = None,
         save_json: Optional[str] = None,
         save_plot: Optional[str] = None,
         random_seed: int = 42,
-        expected_cols: Optional[list] = None
+        expected_cols: Optional[list] = None,
+        n_jobs: int = 1,
+        copy_input: bool = False
     ):
         self.csv_path = csv_path
         self.col_name = col_name
         self.ratios = self._parse_ratios(ratios, ratmin, ratmax, nrat)
         self.repeat = repeat
         self.sequential = sequential
+        self.prefix_random = prefix_random
         self.save_csv = save_csv
         self.save_json = save_json
         self.save_plot = save_plot
@@ -39,6 +43,8 @@ class BenchmarkRunner:
         self.expected_cols = expected_cols
         self.data = self._load_and_prepare(csv_path)
         self.algos_arg = algos
+        self.n_jobs = int(n_jobs)
+        self.copy_input = bool(copy_input)
 
     def _load_and_prepare(self, path: str) -> pd.DataFrame:
         if not os.path.isabs(path):
@@ -114,11 +120,18 @@ class BenchmarkRunner:
         print(f"Ratios: {self.ratios}")
         print(f"Repeat: {self.repeat}, Sequential sampling: {self.sequential}")
 
-        tester = SortTester(cleaned, self.col_name, random_seed=self.random_seed)
+        tester = SortTester(cleaned, self.col_name, random_seed=self.random_seed, copy_input=self.copy_input)
         ratios_dict = {name: self.ratios for name in self.algos.keys()}
 
         times_df = tester.run_algorithms(
-            self.algos, ratios_dict, repeat=self.repeat, sequential=self.sequential, check_sorted=True
+            self.algos,
+            ratios_dict,
+            repeat=self.repeat,
+            sequential=self.sequential,
+            prefix_random=self.prefix_random,
+            check_sorted=True,
+            show_progress=True,
+            n_jobs=self.n_jobs
         )
         times_df.index.name = "ratio"
 
