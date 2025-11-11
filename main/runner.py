@@ -21,7 +21,9 @@ if __name__ == "__main__":
         "TripInformation",
     ]
 
-    col_name = "VehicleType"
+    col_name = "GantryID_O"
+    # None / "time" / "category" / "code"
+    col_type = "code"
     ratmin = 0.01
     ratmax = 0.1
     nrat = 5
@@ -31,6 +33,7 @@ if __name__ == "__main__":
     runner = BenchmarkRunner(
         csv_path="data/TDCS_M06A_20231204_080000.csv",
         col_name=col_name,
+        col_type=col_type,
         algos=None,
         ratios=None,
         ratmin=ratmin,

@@ -14,6 +14,9 @@ class BenchmarkRunner:
         self,
         csv_path: str,
         col_name: str,
+        col_type: Optional[str] = None,
+        category_order: Optional[List[str]] = None,
+        code_suffix_order: Optional[List[str]] = None,
         algos: Optional[str] = None,
         ratios: Optional[str] = None,
         ratmin: float = 0.01,
@@ -32,6 +35,9 @@ class BenchmarkRunner:
     ):
         self.csv_path = csv_path
         self.col_name = col_name
+        self.col_type = (col_type or "").strip().lower() or None
+        self.category_order = category_order
+        self.code_suffix_order = code_suffix_order
         # preserve inputs for title/folder info
         self._ratmin_input = ratmin
         self._ratmax_input = ratmax
@@ -111,11 +117,72 @@ class BenchmarkRunner:
         if self.col_name not in self.data.columns:
             raise ValueError(f"Column '{self.col_name}' not found in CSV. Available columns: {self.data.columns.tolist()}")
 
-        series = self.data[self.col_name].dropna()
-        if not pd.api.types.is_numeric_dtype(series):
-            series = pd.to_numeric(series, errors="coerce").dropna()
-        cleaned = self.data.loc[series.index].copy()
-        cleaned[self.col_name] = series.values
+        series_raw = self.data[self.col_name]
+        # Manual typed preprocessing
+        if self.col_type in {"time", "datetime", "timestamp", "date"}:
+            dt = pd.to_datetime(series_raw, errors="coerce")
+            mask = dt.notna()
+            if mask.sum() == 0:
+                raise ValueError(f"Column '{self.col_name}' set as {self.col_type} but cannot be parsed as datetime.")
+            series = dt[mask].view("int64")
+            cleaned = self.data.loc[mask].copy()
+            cleaned[self.col_name] = series.values
+            print(f"Column '{self.col_name}' parsed as datetime -> int64 ns ({mask.sum()} rows).")
+        elif self.col_type in {"category", "categorical"}:
+            ser = series_raw.astype("string")
+            if self.category_order:
+                cat = pd.Categorical(ser, categories=self.category_order, ordered=True)
+            else:
+                cat = pd.Categorical(ser)
+            codes = pd.Series(cat.codes, index=ser.index)
+            mask = codes >= 0
+            if mask.sum() == 0:
+                raise ValueError(f"Column '{self.col_name}' set as category but no valid categories found.")
+            cleaned = self.data.loc[mask].copy()
+            cleaned[self.col_name] = codes.loc[mask].values
+            series = cleaned[self.col_name]
+            print(f"Column '{self.col_name}' parsed as categorical codes ({mask.sum()} rows).")
+        elif self.col_type in {"code", "gantry", "alphanum"}:
+            import re
+            pattern = re.compile(r'^\s*(\d+)([A-Za-z])(\d+)([A-Za-z])\s*$')
+            suffix_rank = {}
+            if self.code_suffix_order:
+                for i, k in enumerate(self.code_suffix_order):
+                    suffix_rank[str(k).upper()] = i
+            else:
+                suffix_rank = {"N": 0, "S": 1}
+            def encode_one(x):
+                if not isinstance(x, str):
+                    try:
+                        x = str(x)
+                    except Exception:
+                        return None
+                m = pattern.match(x)
+                if not m:
+                    return None
+                g1, g2, g3, g4 = m.groups()
+                try:
+                    p1 = int(g1)
+                    p2 = ord(g2.upper()) - ord('A')
+                    p3 = int(g3)
+                    p4 = suffix_rank.get(g4.upper(), ord(g4.upper()) - ord('A') + 100)
+                    return (p1, p2, p3, p4)
+                except Exception:
+                    return None
+            tuples = series_raw.map(encode_one)
+            mask = tuples.notna()
+            if mask.sum() == 0:
+                raise ValueError(f"Column '{self.col_name}' set as code but values do not match expected pattern.")
+            cleaned = self.data.loc[mask].copy()
+            cleaned[self.col_name] = tuples.loc[mask].tolist()
+            series = cleaned[self.col_name]
+            print(f"Column '{self.col_name}' parsed as code tuples ({mask.sum()} rows).")
+        else:
+            series = series_raw.dropna()
+            if not pd.api.types.is_numeric_dtype(series):
+                series = pd.to_numeric(series, errors="coerce").dropna()
+            cleaned = self.data.loc[series.index].copy()
+            cleaned[self.col_name] = series.values
 
         self.algos = self._choose_algorithms(self.algos_arg, series)
 
