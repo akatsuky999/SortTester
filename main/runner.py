@@ -21,11 +21,11 @@ if __name__ == "__main__":
         "TripInformation",
     ]
 
-    col_name = "GantryID_O"
+    col_name = "VehicleType"
     # None / "time" / "category" / "code"
-    col_type = "code"
-    ratmin = 0.01
-    ratmax = 0.1
+    col_type = "None"
+    ratmin = 0.2
+    ratmax = 1
     nrat = 5
 
     result_dir = os.path.join(project_root, "result", f"{col_name}_r{ratmin}-{ratmax}_n{nrat}")
