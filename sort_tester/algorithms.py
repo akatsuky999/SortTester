@@ -104,7 +104,7 @@ def quick_sort_3(arr: List, **kw):
     return nums
 
 
-#@register('quick_sort_3')
+# @register('quick_sort_3_p')
 # def quick_sort_3(arr: List, **kw):
 #     if len(arr) <= 1:
 #         return list(arr)
